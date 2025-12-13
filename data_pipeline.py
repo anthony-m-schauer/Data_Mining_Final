@@ -40,8 +40,11 @@ Pipeline Steps:
 ##### Step Zero: Imports
 import yfinance as yf
 import pandas as pd
+import numpy as np
 import gc
 from tickers_list import sp500_tickers
+from similarity import compute_pearson 
+from clustering import run_kmeans, run_hierarchical, run_dbscan
 
 ################################################################################
 
@@ -177,7 +180,23 @@ if __name__ == "__main__":
    norm_returns = normalize_returns(returns, method="zscore")
    print("Returns normalized. Ready for similarity/clustering.")
    
-   # Step Four: Clean temporary data
+   # Step Four: Compute SImilarity
+   pearson_mat = compute_pearson(norm_returns)
+
+   # Replace NaN and infinite values with 0
+   pearson_mat_clean = pearson_mat.replace([np.inf, -np.inf], 0).fillna(0)
+   print("Pearson similarity matrix computed and cleaned. Shape:", pearson_mat_clean.shape)
+
+   # Check for any remaining invalid values
+   if not np.isfinite(pearson_mat_clean.values).all():
+    print("Warning: matrix still contains non-finite values!")
+
+   # Step Five: Run Clustering
+   labels_kmeans, _ = run_kmeans(pearson_mat, k=6)
+   labels_hier, _ = run_hierarchical(pearson_mat, k=6)
+   labels_dbscan, _ = run_dbscan(pearson_mat, eps=0.4, min_samples=5) 
+
+   # Step Six: Clean temporary data
    clean_memory(prices, returns)
    
    print("Full S&P 500 Pipeline Complete")
