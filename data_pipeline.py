@@ -44,7 +44,7 @@ import numpy as np
 import gc
 from tickers_list import sp500_tickers
 from similarity import compute_pearson 
-from clustering import run_kmeans, run_hierarchical, run_dbscan
+from clustering import run_kmeans, run_hierarchical
 
 ################################################################################
 
@@ -183,16 +183,17 @@ if __name__ == "__main__":
    # Step Four: Compute SImilarity
    pearson_mat = compute_pearson(norm_returns)
 
-   # Replace NaN and infinite values with 0
+   # Replace NaN and infinite values with 0, 
    pearson_mat_clean = pearson_mat.replace([np.inf, -np.inf], 0).fillna(0)
    print("Pearson similarity matrix computed and cleaned. Shape:", pearson_mat_clean.shape)
 
    # Check for any remaining invalid values
    if not np.isfinite(pearson_mat_clean.values).all():
-    print("Warning: matrix still contains non-finite values!")
+      print("Warning: Pearson matrix still contains non-finite values!")
+   norm_returns_clean = norm_returns.replace([np.inf, -np.inf], 0).fillna(0)
 
    # Step Five: Run Clustering
-   labels_kmeans, _ = run_kmeans(norm_returns.T, k=6)
+   labels_kmeans, _ = run_kmeans(norm_returns_clean.T, k=6)  # transpose for K-Means
    distance = 1 - pearson_mat_clean
    labels_hier, _ = run_hierarchical(distance, k=6, metric="precomputed")
 

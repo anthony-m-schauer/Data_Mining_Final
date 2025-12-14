@@ -1,4 +1,4 @@
-from sklearn.cluster import KMeans, AgglomerativeClustering, DBSCAN
+from sklearn.cluster import KMeans, AgglomerativeClustering
 
 def run_kmeans(df, k):
     print(f"Running K-Means clustering with k={k}...")
