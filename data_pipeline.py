@@ -195,7 +195,6 @@ if __name__ == "__main__":
    # Step Five: Run Clustering
    labels_kmeans, _ = run_kmeans(pearson_mat, k=6)
    labels_hier, _ = run_hierarchical(pearson_mat, k=6)
-   labels_dbscan, _ = run_dbscan(pearson_mat, eps=0.4, min_samples=5) 
    '''
 
    # Step Six: Clean temporary data
