@@ -14,9 +14,11 @@ def run_hierarchical(df):
     print("Hierarchical clustering complete. Labels shape:", labels.shape)
     return labels, model
 
+'''
 def run_dbscan(df, eps=0.5, min_samples=5):
     print(f"Running DBSCAN with eps={eps}, min_samples={min_samples}...")
     model = DBSCAN(eps=eps, min_samples=min_samples)
     labels = model.fit_predict(df)
     print("DBSCAN complete. Labels shape:", labels.shape)
-    return labels, model
+    return labels, model 
+'''
