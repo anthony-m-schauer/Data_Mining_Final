@@ -180,7 +180,6 @@ if __name__ == "__main__":
    norm_returns = normalize_returns(returns, method="zscore")
    print("Returns normalized. Ready for similarity/clustering.")
    
-   '''
    # Step Four: Compute SImilarity
    pearson_mat = compute_pearson(norm_returns)
 
@@ -196,7 +195,6 @@ if __name__ == "__main__":
    labels_kmeans, _ = run_kmeans(norm_returns.T, k=6)
    distance = 1 - pearson_mat_clean
    labels_hier, _ = run_hierarchical(distance, k=6, metric="precomputed")
-   '''
 
    # Step Six: Clean temporary data
    clean_memory(prices, returns)
