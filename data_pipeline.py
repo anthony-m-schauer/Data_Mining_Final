@@ -193,8 +193,9 @@ if __name__ == "__main__":
     print("Warning: matrix still contains non-finite values!")
 
    # Step Five: Run Clustering
-   labels_kmeans, _ = run_kmeans(pearson_mat, k=6)
-   labels_hier, _ = run_hierarchical(pearson_mat, k=6)
+   labels_kmeans, _ = run_kmeans(norm_returns.T, k=6)
+   distance = 1 - pearson_mat_clean
+   labels_hier, _ = run_hierarchical(distance, k=6, metric="precomputed")
    '''
 
    # Step Six: Clean temporary data
