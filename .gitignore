@@ -1,2 +1,16 @@
+# Python bytecode
 __pycache__/
-*.pyc
+*.py[cod]
+
+# VS Code settings
+.vscode/
+
+# Jupyter checkpoints
+.ipynb_checkpoints
+
+# Local environment folders
+env/
+venv/
+
+# System files
+.DS_Store
