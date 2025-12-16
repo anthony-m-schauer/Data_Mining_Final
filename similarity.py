@@ -33,7 +33,7 @@ def compute_pearson(df):
     Parameters:
         df : DataFrame of normalized returns (rows = dates, columns = tickers)
     Returns:
-        DataFrame : Pearson correlation matrix (tickers × tickers)
+        DataFrame : Pearson correlation matrix (tickers x tickers)
     """
     corr_matrix = df.corr()
     return corr_matrix

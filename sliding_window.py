@@ -42,6 +42,8 @@ import numpy as np
 from similarity import compute_pearson
 from clustering import run_kmeans, run_hierarchical
 
+import time
+import sys
 
 ##### Step One: Sliding Window Analysis
 def run_sliding_window(returns_df, window_size=252, step_size=21, k=6 ):
@@ -97,11 +99,16 @@ def run_sliding_window(returns_df, window_size=252, step_size=21, k=6 ):
             "hierarchical_labels": labels_hier
         })
 
-    return results
+    return results, window_size, step_size
 
+
+def slow_print(text):
+    print(text)
+    sys.stdout.flush()
+    time.sleep(0.10)
 
 ##### Step Two: Summarize Sliding Window
-def summarize_sliding_windows(window_results, returns_df):
+def summarize_sliding_windows(window_results, returns_df, window_size, step_size):
     """
     Parameters:
         window_results : list of dicts
@@ -111,8 +118,8 @@ def summarize_sliding_windows(window_results, returns_df):
     """
     print("\n--- SLIDING WINDOW SUMMARY ---")
     total_windows = len(window_results)
-    window_size = (window_results[0]["window_end"] - window_results[0]["window_start"]).days + 1
-    step_size = (window_results[1]["window_start"] - window_results[0]["window_start"]).days if total_windows > 1 else 0
+    print(f"Window size: {window_size} trading days")
+    print(f"Step size: {step_size} trading days")
     num_assets = returns_df.shape[1]
     k = len(np.unique(window_results[0]["kmeans_labels"]))
 
@@ -145,13 +152,12 @@ def summarize_sliding_windows(window_results, returns_df):
         kmeans_labels = w["kmeans_labels"]
         hier_labels = w["hierarchical_labels"]
 
-        print(f"\nWindow {i+1}: {start} → {end}")
-        print(f"  K-Means clusters:")
+        slow_print(f"\nWindow {i+1}: {start} → {end}")
+        slow_print(f"  K-Means clusters:")
         for label in np.unique(kmeans_labels):
             count = np.sum(kmeans_labels == label)
-            print(f"    Cluster {label} size: {count}")
-        print(f"  Hierarchical clusters:")
+            slow_print(f"    Cluster {label} size: {count}")
+        slow_print(f"  Hierarchical clusters:")
         for label in np.unique(hier_labels):
             count = np.sum(hier_labels == label)
-            print(f"    Cluster {label} size: {count}")
-
+            slow_print(f"    Cluster {label} size: {count}")

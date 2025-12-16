@@ -57,7 +57,7 @@ def summarize_clusters(returns_df, labels, method_name="K-Means", returns=None):
         members_idx = np.where(labels == label)[0]
         members = tickers[members_idx]
         print(f"\nCluster {label}: {len(members)} assets")
-        print(f"Example tickers: {members[:5].tolist()}")  # first 5 tickers
+        print(f"\nExample tickers: {members[:5].tolist()}")  # first 5 tickers
 
     pca = PCA(n_components=2)
     coords = pca.fit_transform(returns_df.T)

@@ -44,6 +44,7 @@ import yfinance as yf
 import pandas as pd
 import numpy as np
 import gc
+import time 
 from tickers_list import sp500_tickers
 from similarity import compute_pearson, summarize_pearson
 from clustering import run_kmeans, run_hierarchical, summarize_clusters, summarize_hierarchical
@@ -153,14 +154,14 @@ if __name__ == "__main__":
    ### Part One: Download prices
    prices = download_stock_data(sp500_tickers, "2015-01-01", "2025-01-01")
    print(f"Downloaded prices for {len(prices.columns)} tickers.\n")
-   
+
    ### Part Two: Compute daily returns
    returns = compute_daily_returns(prices)
    print(f"Daily returns computed: {returns.shape[0]} days, {returns.shape[1]} tickers.\n")
    
    ### Part Three: Normalize returns
    norm_returns = normalize_returns(returns, method="zscore")
-   
+
    ### Part Four: Compute Similarity
    print("Part Four: Computing Pearson correlation matrix...")
    pearson_mat = compute_pearson(norm_returns)
@@ -185,15 +186,15 @@ if __name__ == "__main__":
 
    ### Part Six: Run Sliding Window
    print("\nPart Six: Sliding Window")
-   sliding_results = run_sliding_window(
+   sliding_results, window_size, step_size = run_sliding_window(
       returns,
       window_size=252,
       step_size=21,
       k=6 )
-   summarize_sliding_windows(sliding_results, returns)
+   summarize_sliding_windows(sliding_results, returns, window_size, step_size)
 
    ### Part Seven: Visuals
-   print("Part Seven: Visuals")
+   print("\nPart Seven: Visuals")
    # PCA visualization (K-Means clusters)
    plot_pca_clusters(
       norm_returns_clean,
