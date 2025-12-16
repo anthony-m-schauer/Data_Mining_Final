@@ -175,7 +175,6 @@ if __name__ == "__main__":
    ### Part Five: Run Clustering
    print("\nPart Five: Clustering")
    print(f"Running K-Means clustering with k=6...")
-   labels_kmeans, _ = run_kmeans(norm_returns_clean.T, k=6)
    print("K-Means complete.")
    summarize_clusters(norm_returns_clean, labels_kmeans, method_name="K-Means", returns=returns)
    print(f"Running Hierarchical clustering with k=6...")
