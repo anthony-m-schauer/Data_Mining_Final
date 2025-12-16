@@ -159,7 +159,7 @@ if __name__ == "__main__":
    norm_returns = normalize_returns(returns, method="zscore")
    print("Returns normalized. Ready for similarity/clustering.")
    
-   # Step Four: Compute SImilarity
+   # Step Four: Compute Similarity
    pearson_mat = compute_pearson(norm_returns)
 
    # Replace NaN and infinite values with 0
