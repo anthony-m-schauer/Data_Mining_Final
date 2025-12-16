@@ -1,7 +1,7 @@
 '''
 ================================================================================
 Script: similarity.py
-Created by: Malhar Gujar
+Created by: Malhar Gujar wih Anthony Schauer
 --------------------------------------------------------------------------------
 Overview:
 This script computes two types of similarity matrices: Pearson correlation and 
@@ -24,38 +24,36 @@ Similarity Computation Steps:
 ================================================================================
 '''
 
-
 import pandas as pd
+import numpy as np
+
 
 def compute_pearson(df):
     """
-    Compute Pearson correlation matrix.
-
     Parameters:
         df : DataFrame of normalized returns (rows = dates, columns = tickers)
-
     Returns:
         DataFrame : Pearson correlation matrix (tickers × tickers)
     """
-    print("Computing Pearson correlation matrix...")
     corr_matrix = df.corr()
-    print("Pearson matrix shape:", corr_matrix.shape)
     return corr_matrix
 
+def summarize_pearson(corr_df, labels=None):
+    print("\n--- PEARSON CORRELATION SUMMARY ---")
+    n_assets = corr_df.shape[0]
+    print(f"Number of assets: {n_assets}")
+    
+    # Overall stats
+    tril_idx = np.tril_indices(n_assets, k=-1)
+    all_corrs = corr_df.values[tril_idx]
+    print(f"Overall correlation: mean={all_corrs.mean():.3f}, std={all_corrs.std():.3f}, min={all_corrs.min():.3f}, max={all_corrs.max():.3f}")
 
-def compute_cosine(df):
-    """
-    Compute cosine similarity matrix.
-
-    Parameters:
-        df : DataFrame of normalized returns (rows = dates, columns = tickers)
-
-    Returns:
-        DataFrame : Cosine similarity matrix (tickers × tickers)
-    """
-    print("Computing Cosine similarity matrix...")
-    cos_matrix = cosine_similarity(df.T)
-    cos_df = pd.DataFrame(cos_matrix, index=df.columns, columns=df.columns)
-    print("Cosine similarity shape:", cos_df.shape)
-    return cos_df
- 
+    # Optional: summarize intra-cluster correlations
+    if labels is not None:
+        unique_labels = np.unique(labels)
+        for label in unique_labels:
+            idx = np.where(labels == label)[0]
+            if len(idx) > 1:
+                sub_corr = corr_df.values[np.ix_(idx, idx)]
+                intra_corr = sub_corr[np.triu_indices_from(sub_corr, k=1)]
+                print(f"Cluster {label} intra-cluster correlation: mean={intra_corr.mean():.3f}, std={intra_corr.std():.3f}, min={intra_corr.min():.3f}, max={intra_corr.max():.3f}")

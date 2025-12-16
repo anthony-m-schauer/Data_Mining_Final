@@ -1,27 +1,23 @@
 """
-visuals.py
-
+================================================================================
+Script: visuals.py
+Created by: Anthony M. Schauer
+--------------------------------------------------------------------------------
 Overview:
----------
 This module contains visualization and interpretation utilities for the
 S&P 500 clustering project. These functions DO NOT perform analysis.
 They consume outputs from the pipeline (returns, similarity, clustering)
 and produce interpretable visual and textual summaries.
-
+--------------------------------------------------------------------------------
 Visuals Included:
------------------
 1. PCA scatter plot of clusters
 2. Pearson correlation heatmap (ordered by cluster)
 3. Hierarchical clustering dendrogram
 4. Sliding window cluster evolution summary
-
-Each function also prints structured terminal output to support
-interpretation without relying solely on visuals.
+================================================================================
 """
 
-# =========================
-# Step 0: Imports
-# =========================
+#### Step 0: Imports
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -31,13 +27,10 @@ from scipy.cluster.hierarchy import dendrogram, linkage
 from scipy.spatial.distance import squareform
 
 
-# =========================
-# Step 1: PCA Cluster Plot
-# =========================
+#### Step 1: PCA Cluster Plot
 def plot_pca_clusters(returns_df, labels, method_name="K-Means"):
     """
     PCA projection of normalized returns with cluster coloring.
-
     Parameters:
         returns_df : DataFrame (rows = dates, cols = tickers)
         labels     : array-like cluster labels (length = num tickers)
@@ -48,7 +41,6 @@ def plot_pca_clusters(returns_df, labels, method_name="K-Means"):
     print(f"Clustering method: {method_name}")
     print(f"Number of clusters: {len(np.unique(labels))}")
 
-    # PCA on tickers (transpose)
     pca = PCA(n_components=2)
     coords = pca.fit_transform(returns_df.T)
 
@@ -57,7 +49,6 @@ def plot_pca_clusters(returns_df, labels, method_name="K-Means"):
     print(f"  PC2: {pca.explained_variance_ratio_[1]:.3f}")
     print(f"  Total (PC1+PC2): {pca.explained_variance_ratio_.sum():.3f}")
 
-    # Plot
     plt.figure(figsize=(8, 6))
     scatter = plt.scatter(coords[:, 0], coords[:, 1], c=labels, alpha=0.7)
     plt.xlabel("PC1")
@@ -68,25 +59,19 @@ def plot_pca_clusters(returns_df, labels, method_name="K-Means"):
     plt.show()
 
 
-# =========================
-# Step 2: Correlation Heatmap
-# =========================
+##### Step 2: Correlation Heatmap
 def plot_correlation_heatmap(corr_df, labels):
     """
     Heatmap of Pearson correlation matrix reordered by cluster labels.
-
     Parameters:
-        corr_df : DataFrame (tickers × tickers)
+        corr_df : DataFrame (tickers x tickers)
         labels  : array-like cluster labels
     """
-
     print("\n--- CORRELATION HEATMAP SUMMARY ---")
-
-    # Reorder by cluster
+    
     order = np.argsort(labels)
     reordered = corr_df.values[order][:, order]
 
-    # Cluster coherence metric
     unique_clusters = np.unique(labels)
     intra_corrs = []
 
@@ -99,7 +84,6 @@ def plot_correlation_heatmap(corr_df, labels):
     print(f"Average intra-cluster correlation: {np.mean(intra_corrs):.3f}")
     print(f"Cluster count: {len(unique_clusters)}")
 
-    # Plot
     plt.figure(figsize=(8, 6))
     plt.imshow(reordered, cmap="coolwarm", vmin=-1, vmax=1)
     plt.colorbar(label="Pearson Correlation")
@@ -108,30 +92,24 @@ def plot_correlation_heatmap(corr_df, labels):
     plt.show()
 
 
-# =========================
-# Step 3: Hierarchical Dendrogram
-# =========================
+##### Step 3: Hierarchical Dendrogram
 def plot_dendrogram_from_distance(distance_df):
     """
     Dendrogram visualization from a precomputed distance matrix.
-
     Parameters:
         distance_df : DataFrame (tickers × tickers), distance matrix
     """
 
-    print("\n--- DENDROGRAM SUMMARY ---")
+    print("\n--- HIERARCHICAL SUMMARY ---")
 
-    # Convert square distance matrix → condensed
     condensed = squareform(distance_df.values, checks=False)
 
-    # Linkage
     Z = linkage(condensed, method="average")
 
     print(f"Linkage matrix shape: {Z.shape}")
     print("First 5 linkage merges:")
     print(Z[:5])
 
-    # Plot
     plt.figure(figsize=(10, 5))
     dendrogram(Z, no_labels=True)
     plt.title("Hierarchical Clustering Dendrogram")
@@ -141,31 +119,35 @@ def plot_dendrogram_from_distance(distance_df):
     plt.show()
 
 
-# =========================
-# Step 4: Sliding Window Summary
-# =========================
-def summarize_sliding_windows(window_results):
+##### Step 4: Sliding Window Summary
+def plot_cluster_change_over_time(window_results, returns_df):
     """
-    Textual and numeric summary of sliding window clustering results.
-
-    Parameters:
-        window_results : list of dicts, output from sliding_window.py
+    Plot cluster change rates across sliding windows.
     """
+    import matplotlib.pyplot as plt
+    import numpy as np
 
-    print("\n--- SLIDING WINDOW SUMMARY ---")
-    print(f"Total windows processed: {len(window_results)}")
+    num_assets = returns_df.shape[1]
 
-    cluster_counts = []
+    kmeans_history = [w["kmeans_labels"] for w in window_results]
+    hier_history = [w["hierarchical_labels"] for w in window_results]
+    dates = [w["window_end"] for w in window_results]
 
-    for i, w in enumerate(window_results):
-        labels = w["kmeans_labels"]
-        unique = len(np.unique(labels))
-        cluster_counts.append(unique)
+    kmeans_changes = [
+        np.sum(kmeans_history[i] != kmeans_history[i - 1]) / num_assets
+        for i in range(1, len(kmeans_history))
+    ]
+    hier_changes = [
+        np.sum(hier_history[i] != hier_history[i - 1]) / num_assets
+        for i in range(1, len(hier_history))
+    ]
 
-        print(f"Window {i+1}: {w['window_start']} → {w['window_end']}")
-        print(f"  Clusters detected: {unique}")
-
-    print("\nCluster count stability:")
-    print(f"  Min clusters: {min(cluster_counts)}")
-    print(f"  Max clusters: {max(cluster_counts)}")
-    print(f"  Mean clusters: {np.mean(cluster_counts):.2f}")
+    plt.figure(figsize=(10, 5))
+    plt.plot(dates[1:], kmeans_changes, label="K-Means")
+    plt.plot(dates[1:], hier_changes, label="Hierarchical")
+    plt.xlabel("Window End Date")
+    plt.ylabel("Cluster Change Rate")
+    plt.title("Cluster Stability Over Time (Sliding Windows)")
+    plt.legend()
+    plt.tight_layout()
+    plt.show()

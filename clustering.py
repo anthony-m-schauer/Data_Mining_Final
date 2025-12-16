@@ -1,7 +1,7 @@
 '''
 ================================================================================
 Script: clustering.py
-Created by: Malhar Gujar
+Created by: Malhar Gujar with Anthony Schauer
 --------------------------------------------------------------------------------
 Overview:
 This script provides implementations for two popular clustering algorithms: 
@@ -23,27 +23,81 @@ Clustering Steps:
 ================================================================================
 '''
 
+import numpy as np
 from sklearn.cluster import KMeans, AgglomerativeClustering
+from sklearn.decomposition import PCA
+
 
 def run_kmeans(df, k):
-    print(f"Running K-Means clustering with k={k}...")
     model = KMeans(n_clusters=k, random_state=42, n_init=10)
     labels = model.fit_predict(df)
-    print("K-Means complete. Labels shape:", labels.shape)
     return labels, model
 
 def run_hierarchical(df, k, metric="euclidean"):
-    print(f"Running Hierarchical clustering with k={k} using metric={metric}...")
     model = AgglomerativeClustering(n_clusters=k, metric=metric, linkage="average")
     labels = model.fit_predict(df)
-    print("Hierarchical clustering complete. Labels shape:", labels.shape)
     return labels, model
 
-'''
-def run_dbscan(df, eps=0.5, min_samples=5):
-    print(f"Running DBSCAN with eps={eps}, min_samples={min_samples}...")
-    model = DBSCAN(eps=eps, min_samples=min_samples)
-    labels = model.fit_predict(df)
-    print("DBSCAN complete. Labels shape:", labels.shape)
-    return labels, model 
-'''
+
+def summarize_clusters(returns_df, labels, method_name="K-Means", returns=None):
+    """
+    Parameters:
+        returns_df : DataFrame of normalized returns (rows=dates, cols=tickers)
+        labels     : array-like cluster labels
+        method_name: str, name of clustering method
+        returns    : optional, original returns DataFrame to compute avg return/volatility
+    """
+    tickers = returns_df.columns
+    unique_labels = np.unique(labels)
+
+    print(f"\n--- CLUSTER SUMMARY ({method_name}) ---")
+    print(f"Number of clusters: {len(unique_labels)}")
+
+    for label in unique_labels:
+        members_idx = np.where(labels == label)[0]
+        members = tickers[members_idx]
+        print(f"\nCluster {label}: {len(members)} assets")
+        print(f"Example tickers: {members[:5].tolist()}")  # first 5 tickers
+
+    pca = PCA(n_components=2)
+    coords = pca.fit_transform(returns_df.T)
+    for label in unique_labels:
+        members_idx = np.where(labels == label)[0]
+        cluster_coords = coords[members_idx]
+        mean_coords = cluster_coords.mean(axis=0)
+        print(f"Cluster {label} mean PCA coords: {mean_coords}")
+
+    if returns is not None:
+        for label in unique_labels:
+            members_idx = np.where(labels == label)[0]
+            cluster_returns = returns.iloc[:, members_idx]
+            avg_return = cluster_returns.mean().mean()
+            vol = cluster_returns.std().mean()
+            print(f"Cluster {label}: avg return {avg_return:.4f}, avg volatility {vol:.4f}")
+
+
+def summarize_hierarchical(df, labels, method_name="Hierarchical"):
+    """
+    Parameters:
+        df          : DataFrame used for clustering (tickers × tickers distance matrix)
+        labels      : array of cluster labels from run_hierarchical
+        method_name : string label for printing
+    """
+    print(f"\n--- {method_name.upper()} CLUSTER SUMMARY ---")
+    
+    n_assets = df.shape[0]
+    print(f"Number of assets: {n_assets}")
+    unique_labels = np.unique(labels)
+    print(f"Number of clusters: {len(unique_labels)}")
+    
+    for label in unique_labels:
+        count = np.sum(labels == label)
+        print(f"Cluster {label} size: {count}")
+    
+    for label in unique_labels:
+        idx = np.where(labels == label)[0]
+        if len(idx) > 1:
+            sub_dist = df.values[np.ix_(idx, idx)]
+            tril_idx = np.tril_indices_from(sub_dist, k=-1)
+            mean_dist = sub_dist[tril_idx].mean()
+            print(f"Cluster {label} mean pairwise distance: {mean_dist:.3f}")

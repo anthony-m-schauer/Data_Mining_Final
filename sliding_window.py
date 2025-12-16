@@ -42,15 +42,9 @@ import numpy as np
 from similarity import compute_pearson
 from clustering import run_kmeans, run_hierarchical
 
-################################################################################
 
 ##### Step One: Sliding Window Analysis
-def run_sliding_window(
-    returns_df,
-    window_size=252,
-    step_size=21,
-    k=6
-):
+def run_sliding_window(returns_df, window_size=252, step_size=21, k=6 ):
     """
     Parameters:
     - returns_df : DataFrame
@@ -66,7 +60,7 @@ def run_sliding_window(
         Each entry contains clustering results for one window
     """
 
-    print("\nStarting Sliding Window Analysis...")
+    print("Starting Sliding Window Analysis...")
     print(f"Window size: {window_size} days")
     print(f"Step size: {step_size} days\n")
 
@@ -74,28 +68,28 @@ def run_sliding_window(
     dates = returns_df.index
     window_end_indices = range(window_size, len(dates), step_size)
 
+    kmeans_history = []
+    hier_history = []
+
     for idx in window_end_indices:
         window_end_date = dates[idx]
         window_start_date = dates[idx - window_size]
 
-        print(f"Processing window ending on {window_end_date.date()}")
-
-        ##### Step Two: Extract Window and Normalize Returns 
         window_returns = returns_df.iloc[idx - window_size:idx]
         
         window_norm = (window_returns - window_returns.mean()) / window_returns.std()
         window_norm = window_norm.replace([np.inf, -np.inf], 0).fillna(0)
 
-        ##### Step Three: Compute Similarities and Clustering 
         pearson_mat = compute_pearson(window_norm)
         pearson_mat_clean = pearson_mat.replace([np.inf, -np.inf], 0).fillna(0)
         distance_mat = 1 - pearson_mat_clean
 
         labels_kmeans, _ = run_kmeans(window_norm.T, k=k)
+        kmeans_history.append(labels_kmeans)
 
         labels_hier, _ = run_hierarchical(distance_mat, k=k, metric="precomputed")
+        hier_history.append(labels_hier)
 
-        ##### Step Four: Store Results
         results.append({
             "window_start": window_start_date,
             "window_end": window_end_date,
@@ -103,7 +97,61 @@ def run_sliding_window(
             "hierarchical_labels": labels_hier
         })
 
-        print("Window complete.\n")
-
-    print("Sliding Window Analysis Complete.\n")
     return results
+
+
+##### Step Two: Summarize Sliding Window
+def summarize_sliding_windows(window_results, returns_df):
+    """
+    Parameters:
+        window_results : list of dicts
+            Output of run_sliding_window()
+        returns_df : DataFrame
+            Original returns data (rows = dates, cols = tickers)
+    """
+    print("\n--- SLIDING WINDOW SUMMARY ---")
+    total_windows = len(window_results)
+    window_size = (window_results[0]["window_end"] - window_results[0]["window_start"]).days + 1
+    step_size = (window_results[1]["window_start"] - window_results[0]["window_start"]).days if total_windows > 1 else 0
+    num_assets = returns_df.shape[1]
+    k = len(np.unique(window_results[0]["kmeans_labels"]))
+
+    print(f"Total windows processed: {total_windows}")
+    print(f"Window size: {window_size} trading days")
+    print(f"Step size: {step_size} trading days")
+    print(f"Number of assets: {num_assets}")
+    print(f"Number of clusters (k): {k}")
+
+    kmeans_history = [w["kmeans_labels"] for w in window_results]
+    hier_history = [w["hierarchical_labels"] for w in window_results]
+
+    avg_kmeans_change = np.mean([
+        np.sum(kmeans_history[i] != kmeans_history[i - 1]) / num_assets
+        for i in range(1, total_windows)
+    ]) if total_windows > 1 else 0
+
+    avg_hier_change = np.mean([
+        np.sum(hier_history[i] != hier_history[i - 1]) / num_assets
+        for i in range(1, total_windows)
+    ]) if total_windows > 1 else 0
+
+    print(f"Avg K-Means cluster change rate: {avg_kmeans_change:.3f}")
+    print(f"Avg Hierarchical cluster change rate: {avg_hier_change:.3f}")
+
+    print("\nPer-window cluster sizes:")
+    for i, w in enumerate(window_results):
+        start = w["window_start"].strftime("%Y-%m-%d")
+        end = w["window_end"].strftime("%Y-%m-%d")
+        kmeans_labels = w["kmeans_labels"]
+        hier_labels = w["hierarchical_labels"]
+
+        print(f"\nWindow {i+1}: {start} → {end}")
+        print(f"  K-Means clusters:")
+        for label in np.unique(kmeans_labels):
+            count = np.sum(kmeans_labels == label)
+            print(f"    Cluster {label} size: {count}")
+        print(f"  Hierarchical clusters:")
+        for label in np.unique(hier_labels):
+            count = np.sum(hier_labels == label)
+            print(f"    Cluster {label} size: {count}")
+
