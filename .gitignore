@@ -1,6 +1,10 @@
 # Python bytecode
 __pycache__/
 *.py[cod]
+*.pyc
+*.pyo
+*.pyd
+*.pkl
 
 # VS Code settings
 .vscode/
@@ -9,8 +13,24 @@ __pycache__/
 .ipynb_checkpoints
 
 # Local environment folders
-env/
 venv/
+env/
+.env/
 
-# System files
+# Data files
+*.csv
+*.xlsx
+*.h5
+*.json
+
+# Logs and output
+*.log
+*.out
+
+# Plot outputs / temporary results
+plots/
+results/
+
+# OS-specific
 .DS_Store
+Thumbs.db
